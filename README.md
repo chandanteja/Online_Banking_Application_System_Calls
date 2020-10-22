@@ -7,4 +7,8 @@ Bank_employye_creation ---> is for creating bank_employee as employee/admin won'
 
 Bank_employee.c ---> this is the file which will be inovkedd if a user chooses the role as Employee/Admin
 
-Connection_stub_to_server.c   ----> this is basically like a client who tries to connect to server and depending and chooses a role. This same file will contain code for both employee and 
+Connection_stub_to_server.c   ----> this is basically like a client who tries to connect to server and depending and chooses a role. This same file will contain code for both employee and customer too we just need to demarcate clearly.
+
+user_details.h   ---->  This file contains all strctures related to data storage like credentials,account details, transaction details.
+
+
