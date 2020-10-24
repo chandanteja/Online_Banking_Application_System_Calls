@@ -18,7 +18,7 @@
 //Define Section
 //=========================
 
-#define SERV_PORT 5061
+#define SERV_PORT 5062
 
 
 int main()
@@ -64,6 +64,8 @@ struct sockaddr_in cliaddr,servaddr;
                           {  //child handles the connecction
                             close(listenfd);
                             char connfd_str[20];
+                            //printf("role=%d\n",role);
+                            //return 1;
                             switch(role)
                             {
                               case 1:   printf("\nInvoked Employee stub\n");
@@ -74,9 +76,12 @@ struct sockaddr_in cliaddr,servaddr;
                                         //printf("After execlp\n");
                                         break;
                               case 2:   printf("\nInvoked Customer Stub\n");
+                                        snprintf(connfd_str,sizeof(connfd_str),"%d",connfd);
+                                        execlp("./Bank_Customer","Bank_Customer",connfd_str,NULL);
+
                                         break;
                               default:
-                                        printf("We don't have this role. Sorry!!!\n");
+                                        printf("Invalid role selected by user\n");
                                         exit(1);
 
                             }

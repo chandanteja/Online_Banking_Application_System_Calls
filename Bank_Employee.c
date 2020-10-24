@@ -99,7 +99,7 @@ if(response_ch=='\n')
           lock_login_emp.l_pid=getpid();
           rcrd_len=rcrd_len+record_len;
           fcntl(fd_lgn_emp,F_SETLKW,&lock_login_emp);
-          printf("\nUsername or password din't match\n");
+          printf("\nUsername or Password din't match\n");
 
       }
 
@@ -119,7 +119,6 @@ if(response_ch=='\n')
       if(flagu==1 && flagp==1)
       {
         write(connfd_from_server,Auth_success,sizeof(Auth_success));
-
         lock_login_emp.l_type=F_UNLCK;
         fcntl(fd_lgn_emp,F_SETLKW,&lock_login_emp);
         close(fd_lgn_emp);
