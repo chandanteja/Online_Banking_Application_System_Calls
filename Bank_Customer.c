@@ -12,7 +12,9 @@
 //==============================
 //User header files
 //================================
-#include  "User_Details.h"
+//#include  "User_Details.h"
+#include "Customer_Functions.h"
+#define ARRAY_SIZE 1024
 
 
 
@@ -142,15 +144,188 @@ int main(int argc,char* argv[])
 
             switch(op_choice)
             {
-              case 1:
+              case 1:   //Deposit
+                        if(acc_login_choice==1)   //NORMAL
+                        {
+                          printf("Collecting data for deposit\n");
+                          int acc_no;
+                          double amnt;
+                          read(connfd_customer,&acc_no,sizeof(acc_no));
+                          acc_no=ntohl(acc_no);
+                          printf("acc_no: %d\n",acc_no);
+                          read(connfd_customer,&amnt,sizeof(amnt));
+                          printf("amount= %lf\n",amnt);
+                          int dep_ret=depositNormal(acc_no,amnt);
+                          if(dep_ret==1)
+                          {
+                              char success[150]="Amount deposited successfully\n";
+                              struct Customer_Details dep;
+                              int fd=open("customer.txt",O_CREAT|O_RDWR,0666);
+                              struct flock lock;
+
+                              lock.l_type=F_RDLCK;    //Read lock
+                              lock.l_whence=SEEK_SET;
+                              lock.l_start=0;
+                              lock.l_len=0; //entire file is locked from start
+                              lock.l_pid=getpid();
+
+                              fcntl(fd,F_SETLKW,&lock);
+
+                              while(read(fd,&dep,sizeof(dep))>0)
+                              {
+                                if(acc_no==dep.Account.Account_Number)
+                                {
+                                  write(connfd_customer,success,sizeof(success));
+                                  write(connfd_customer,&dep,sizeof(dep));
+
+                                }
+                              }
+                          }
+                          else if(dep_ret==-1)
+                          {
+                                char failure[150]="Failed to deposit amount. Check the account number you entered\n";
+                                write(connfd_customer,failure,sizeof(failure));
+                          }
+                      }
+                      else if(acc_login_choice==2)  //joint acc
+                      {
+
+                      }
+
                     break;
-              case 2:
+              case 2:     //withdraw
+                          if(acc_login_choice==1)   //NORMAL
+                          {
+                                printf("Collecting data for withdrawing\n");
+                                int acc_no;
+                                double amnt;
+                                read(connfd_customer,&acc_no,sizeof(acc_no));
+                                acc_no=ntohl(acc_no);
+                                printf("acc_no: %d\n",acc_no);
+                                read(connfd_customer,&amnt,sizeof(amnt));
+                                printf("amount= %lf\n",amnt);
+                                int with_ret=withdrawNormal(acc_no,amnt);
+                                if(with_ret==1)
+                                {
+                                    char success[150]="Amount debited successfully\n";
+                                    struct Customer_Details with;
+                                    int fd=open("customer.txt",O_CREAT|O_RDWR,0666);
+                                    struct flock lock;
+
+                                    lock.l_type=F_RDLCK;    //Read lock
+                                    lock.l_whence=SEEK_SET;
+                                    lock.l_start=0;
+                                    lock.l_len=0; //entire file is locked from start
+                                    lock.l_pid=getpid();
+
+                                    fcntl(fd,F_SETLKW,&lock);
+
+                                    while(read(fd,&with,sizeof(with))>0)
+                                    {
+                                      if(acc_no==with.Account.Account_Number)
+                                      {
+                                        write(connfd_customer,success,sizeof(success));
+                                        write(connfd_customer,&with,sizeof(with));
+
+                                      }
+                                    }
+                                }
+                                else if(with_ret==-1)
+                                {
+                                      char failure[150]="Failed to Withdraw amount. Check the account number you entered\n";
+                                      write(connfd_customer,failure,sizeof(failure));
+                                }
+                                else if(with_ret==-2)
+                                {
+                                  char failure[150]="Insufficient Balance.\n";
+                                  write(connfd_customer,failure,sizeof(failure));
+                                }
+                          }
+                          else if(acc_login_choice==2)
+                          {
+
+                          }
                     break;
-              case 3:
+              case 3:   //check balance
+                        if(acc_login_choice==1)   //NORMAL
+                        {
+                              printf("Collecting data for Balance enquiry\n");
+                              int acc_no;
+                            //  double amnt;
+                              read(connfd_customer,&acc_no,sizeof(acc_no));
+                              acc_no=ntohl(acc_no);
+                              printf("acc_no: %d\n",acc_no);
+                              //read(connfd_customer,&amnt,sizeof(amnt));
+                              //printf("amount= %lf\n",amnt);
+                              int enq_ret=checkBalanceNormal(acc_no);
+                              if(enq_ret==1)    //successfully goot balance details
+                              {
+                                  char success[150]="Balance Retrieved Successfully\n";
+                                  struct Customer_Details enq;
+                                  int fd=open("customer.txt",O_CREAT|O_RDWR,0666);
+                                  struct flock lock;
+
+                                  lock.l_type=F_RDLCK;    //Read lock
+                                  lock.l_whence=SEEK_SET;
+                                  lock.l_start=0;
+                                  lock.l_len=0; //entire file is locked from start
+                                  lock.l_pid=getpid();
+
+                                  fcntl(fd,F_SETLKW,&lock);
+
+                                  while(read(fd,&enq,sizeof(enq))>0)
+                                  {
+                                        if(acc_no==enq.Account.Account_Number)
+                                        {
+                                          write(connfd_customer,success,sizeof(success));
+                                          write(connfd_customer,&enq,sizeof(enq));
+
+                                        }
+                                  }
+                              }
+                              else if(enq_ret==-1)
+                              {
+                                    char failure[150]="Failed to Retrieve Balance. Check the account number you entered\n";
+                                    write(connfd_customer,failure,sizeof(failure));
+                              }
+                        }
+                        else if(acc_login_choice==2)  //Joint
+                        {
+
+                        }
+
                     break;
-              case 4:
+              case 4:     //View Details i.eprint all the users transactions
                     break;
-              case 5:
+              case 5: //password change
+                    if(acc_login_choice==1)   //NORMAL
+                    {
+                          printf("password change functionality invoked\n");
+                          int acc_no;
+                          char new_password[ARRAY_SIZE];
+                          read(connfd_customer,&acc_no,sizeof(acc_no));
+                          read(connfd_customer,new_password,sizeof(new_password));
+                          acc_no=ntohl(acc_no);
+                          printf("acc_no: %d\n",acc_no);
+
+                          int pass_ret=passwordChangeNormal(acc_no,new_password);
+                          if(pass_ret==1)
+                          {
+                              char success[150]="Password changed successfully\n";
+                              write(connfd_customer,success,sizeof(success));
+
+                          }
+                          else if(pass_ret==-1)
+                          {
+                                char failure[150]="Failed to change password. Check the account number you entered\n";
+                                write(connfd_customer,failure,sizeof(failure));
+                          }
+                    }
+                    else if(acc_login_choice==2)
+                    {
+
+                    }
+
                     break;
               default:
                       write(connfd_customer,"Invalid option selected. Closed the connection\n",sizeof("Invalid option selected. Closed the connection\n"));

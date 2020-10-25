@@ -18,7 +18,7 @@
 //Define Section
 //=========================
 
-#define SERV_PORT 5062
+#define SERV_PORT 5061
 
 
 int main()

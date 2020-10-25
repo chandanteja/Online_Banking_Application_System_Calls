@@ -50,7 +50,7 @@ struct Employee_Details{
 
 struct Transaction_Details {
 int Account_Number;
-double Amount;
+double Prev_Balance;
 // Add date too
-double Balance_remaining;
+double Curr_Balance;
 };

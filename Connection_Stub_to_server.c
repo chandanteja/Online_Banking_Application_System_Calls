@@ -15,7 +15,7 @@
 #include "Employee_functions.h"
 #define ARRAY_SIZE 1024
 
-#define SERV_PORT 5062
+#define SERV_PORT 5061
 
 //common client for both 34a and 34b. So if we want to execute both 34a and 34b then we need to change the port number after executing one of these
 int main()
@@ -333,9 +333,9 @@ else if(role_cli==2)
 {
   printf("This is customer role\n");
   char acc_login_type[150];
-  read(sockfd,acc_login_type,sizeof(acc_login_type));
+  read(sockfd,acc_login_type,sizeof(acc_login_type));     //the prompt for type of account is read from server
   printf("%s",acc_login_type);
-  int acc_login_choice;
+  int acc_login_choice;       //for checking normal or joint account
   scanf("%d",&acc_login_choice);
   acc_login_choice=htonl(acc_login_choice);
   write(sockfd,&acc_login_choice,sizeof(acc_login_choice));
@@ -406,7 +406,174 @@ else if(role_cli==2)
 
 //ask account number for every operation by client and send it to server, then server will find the account type and invoke paricular function invloke a particular function and then reply to client.
 
+  switch(op_menu)
+  {
+    case 1:   //deposit
+        if(acc_login_choice==1)
+            {
+                printf("Enter account number: ");
+                int acc_no;
+                scanf("%d",&acc_no);
+                printf("Enter amount to deposit: ");
+                double amnt;
+                scanf("%lf",&amnt);
+                acc_no=htonl(acc_no);
+                write(sockfd,&acc_no,sizeof(acc_no));
+                write(sockfd,&amnt,sizeof(amnt));     //no conversion needed for double values
+                acc_no=ntohl(acc_no);
 
+              //  int joint_OR_Normal;
+                //read(sockfd,&joint_OR_Normal,sizeof(joint_OR_Normal));
+                char ret_msg[150];
+                read(sockfd,ret_msg,sizeof(ret_msg));
+
+
+                if(strcmp(ret_msg,"Amount deposited successfully\n")==0)
+                {
+                  struct Customer_Details dep;
+                  read(sockfd,&dep,sizeof(dep));
+                  printf("%s\n",ret_msg);
+                  printf("============Account details after depositing of money============\n");
+                  printf("Username: %s\n",dep.Username);
+                  printf("Account_Number: %d\n",dep.Account.Account_Number);
+                  printf("Account Status: %d\n",dep.Account.Acc_status);
+                  printf("Balance: %lf\n",dep.Account.Balance);
+                  //print structure details
+
+                }
+                else{
+                    printf("%s",ret_msg);
+                    exit(1);
+                }
+          }
+          else if(acc_login_choice==2)    //joint account
+          {
+
+          }
+          break;
+
+    case 2:
+              //Withdraw
+            if(acc_login_choice==1)
+            {
+                printf("Enter account number: ");
+                int acc_no;
+                scanf("%d",&acc_no);
+                printf("Enter amount to Withdraw: ");
+                double amnt;
+                scanf("%lf",&amnt);
+                acc_no=htonl(acc_no);
+                write(sockfd,&acc_no,sizeof(acc_no));
+                write(sockfd,&amnt,sizeof(amnt));     //no conversion needed for double values
+                acc_no=ntohl(acc_no);
+                char ret_msg[150];
+                read(sockfd,ret_msg,sizeof(ret_msg));
+
+                if(strcmp(ret_msg,"Amount debited successfully\n")==0)
+                {
+                  struct Customer_Details dep;
+                  read(sockfd,&dep,sizeof(dep));
+                  printf("%s\n",ret_msg);
+                  printf("============Account details after withdrawl of money============\n");
+                  printf("Username: %s\n",dep.Username);
+                  printf("Account_Number: %d\n",dep.Account.Account_Number);
+                  printf("Account Status: %d\n",dep.Account.Acc_status);
+                  printf("Balance: %lf\n",dep.Account.Balance);
+                  //print structure details
+
+                }
+                else{
+                    printf("%s",ret_msg);
+                    exit(1);
+                }
+            }
+          else if(acc_login_choice==2)  //joint account
+          {
+
+          }
+            break;
+
+    case 3:   //Balance enquiry
+                      if(acc_login_choice==1)   //Normal
+                      {
+                            printf("Enter account number: ");
+                            int acc_no;
+                            scanf("%d",&acc_no);
+                            acc_no=htonl(acc_no);
+                            write(sockfd,&acc_no,sizeof(acc_no));
+                            acc_no=ntohl(acc_no);
+                            char ret_msg[150];
+                            read(sockfd,ret_msg,sizeof(ret_msg));
+
+                            if(strcmp(ret_msg,"Balance Retrieved Successfully\n")==0)
+                            {
+                              struct Customer_Details enq;
+                              read(sockfd,&enq,sizeof(enq));
+                              printf("%s\n",ret_msg);
+                              printf("================Balance details are as below================\n");
+                              printf("Username: %s\n",enq.Username);
+                              printf("Account_Number: %d\n",enq.Account.Account_Number);
+                              printf("Balance: %lf\n",enq.Account.Balance);
+                              printf("Account Status: %d\n",enq.Account.Acc_status);
+                              //print structure details
+
+                            }
+                            else{
+                                printf("%s",ret_msg);
+                                exit(1);
+                            }
+                      }
+                      else if(acc_login_choice==2)    //joint
+                      {
+
+                      }
+            break;
+    case 4:   //view transaction details  . Here we need to print transaction details
+        if(acc_login_choice==1)
+        {
+
+        }
+        else if(acc_login_choice==2)    //joint account
+        {
+
+        }
+         break;
+    case 5:   //password change
+    if(acc_login_choice==1)
+    {
+        printf("Enter account number: ");
+        int acc_no;
+        scanf("%d",&acc_no);
+        printf("Enter New Password for Password change: ");
+        char new_pass[ARRAY_SIZE];
+        scanf(" %[^\n]",new_pass);
+
+        acc_no=htonl(acc_no);
+        write(sockfd,&acc_no,sizeof(acc_no));
+        write(sockfd,new_pass,sizeof(new_pass));     //no conversion needed for double values
+        acc_no=ntohl(acc_no);
+
+        char ret_msg[150];
+        read(sockfd,ret_msg,sizeof(ret_msg));
+
+        if(strcmp(ret_msg,"Password changed successfully\n")==0)
+        {
+                printf("%s",ret_msg);
+        }
+        else{
+            printf("%s",ret_msg);
+            exit(1);
+        }
+    }
+  else if(acc_login_choice==2)  //joint account
+  {
+
+  }
+
+          break;
+
+
+  }
 
 }
 
