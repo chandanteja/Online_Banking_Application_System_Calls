@@ -77,8 +77,66 @@ int depositNormal(int acc_no,double amnt)
 
 }
 
-int depositJoint(int acc_no,double amount)
+int depositJoint(int acc_no,double amnt)
 {
+  printf("inside joint deposit fn\n");
+  int fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
+  struct flock lock;
+  struct Joint_Account dep;
+
+  lock.l_type=F_RDLCK;    //Read lock
+  lock.l_whence=SEEK_SET;
+  lock.l_start=0;
+  lock.l_len=0; //entire file is locked from start
+  lock.l_pid=getpid();
+
+  fcntl(fd,F_SETLKW,&lock);   //locked
+
+  int record_len=sizeof(dep);
+  printf("Inside joint dep fn, acc_no: %d\n",acc_no);
+  while(read(fd,&dep,sizeof(dep))>0)
+  {
+    if(acc_no==dep.Primary.Account.Account_Number)
+    {
+        //converting readlock on whole file to write lock on that particular record
+        lseek(fd,-sizeof(dep),SEEK_CUR);
+        lock.l_type=F_WRLCK;    //Read lock
+        lock.l_whence=SEEK_CUR;
+        lock.l_start= 0;
+        lock.l_len= sizeof(dep); //entire file is locked from start
+        lock.l_pid=getpid();
+        fcntl(fd,F_SETLKW,&lock);
+
+        struct Transaction_Details trans;
+        trans.Account_Number=dep.Primary.Account.Account_Number;
+        trans.Prev_Balance=dep.Primary.Account.Balance;
+        dep.Primary.Account.Balance=dep.Primary.Account.Balance+amnt;
+
+        write(fd,&dep,sizeof(dep));
+        printf("Updated the balance in account\n");
+        lock.l_type=F_UNLCK  ;
+        fcntl(fd,F_SETLKW,&lock);   //unlocked the file after writing to it
+
+        int fd_trans=open("transactions.txt",O_CREAT|O_RDWR|O_APPEND,0666);
+
+        trans.Curr_Balance=dep.Primary.Account.Balance;
+        write(fd_trans,&trans,sizeof(trans));
+        return 1;   //deposit success
+
+
+    }
+    else  //reccord didn't find. Remove this record from lock
+    {
+
+      lock.l_whence=SEEK_SET;
+      lock.l_start=record_len+1;
+      lock.l_len=0; //entire file is locked from start
+      record_len=record_len+sizeof(dep);
+      fcntl(fd,F_SETLKW,&lock);     //removed the record which failed comparision from lock.
+
+    }
+  }
+  return -1; //failure in depositing
 
 }
 
@@ -148,8 +206,69 @@ int withdrawNormal(int acc_no,double amnt)
 
 }
 
-int withdrawJoint(int acc_no,double amount)
+int withdrawJoint(int acc_no,double amnt)
 {
+  printf("inside joint withdraw fn\n");
+  int fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
+  struct flock lock;
+  struct Joint_Account with;
+
+  lock.l_type=F_RDLCK;    //Read lock
+  lock.l_whence=SEEK_SET;
+  lock.l_start=0;
+  lock.l_len=0; //entire file is locked from start
+  lock.l_pid=getpid();
+
+  fcntl(fd,F_SETLKW,&lock);   //locked
+
+  int record_len=sizeof(with);
+  printf("Inside joint withdraw fn, acc_no: %d\n",acc_no);
+  while(read(fd,&with,sizeof(with))>0)
+  {
+    if(acc_no==with.Primary.Account.Account_Number)
+    {
+        //converting readlock on whole file to write lock on that particular record
+        lseek(fd,-sizeof(with),SEEK_CUR);
+        lock.l_type=F_WRLCK;    //Read lock
+        lock.l_whence=SEEK_CUR;
+        lock.l_start= 0;
+        lock.l_len= sizeof(with); //entire file is locked from start
+        lock.l_pid=getpid();
+        fcntl(fd,F_SETLKW,&lock);
+
+        struct Transaction_Details trans;
+        trans.Account_Number=with.Primary.Account.Account_Number;
+        trans.Prev_Balance=with.Primary.Account.Balance;
+        if(with.Primary.Account.Balance >= amnt)   //amount trying to withdraw is < available balance
+              with.Primary.Account.Balance=with.Primary.Account.Balance-amnt;
+        else
+             return -2;    //insufficient balance
+
+        write(fd,&with,sizeof(with));
+        printf("Updated the balance in account\n");
+        lock.l_type=F_UNLCK  ;
+        fcntl(fd,F_SETLKW,&lock);   //unlocked the file after writing to it
+
+        int fd_trans=open("transactions.txt",O_CREAT|O_RDWR|O_APPEND,0666);
+
+        trans.Curr_Balance=with.Primary.Account.Balance;
+        write(fd_trans,&trans,sizeof(trans));
+        return 1;   //withdrawl success
+
+
+    }
+    else  //reccord didn't find. Remove this record from lock
+    {
+
+      lock.l_whence=SEEK_SET;
+      lock.l_start=record_len+1;
+      lock.l_len=0; //entire file is locked from start
+      record_len=record_len+sizeof(with);
+      fcntl(fd,F_SETLKW,&lock);     //removed the record which failed comparision from lock.
+
+    }
+  }
+  return -1; //failure in withdrawl
 
 }
 
@@ -216,6 +335,62 @@ int checkBalanceNormal(int acc_no)
 
 int checkBalanceJoint(int acc_no)
 {
+  printf("inside balance check joint fn\n");
+  int fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
+  struct flock lock;
+  struct Joint_Account enq;
+
+  lock.l_type=F_RDLCK;    //Read lock
+  lock.l_whence=SEEK_SET;
+  lock.l_start=0;
+  lock.l_len=0; //entire file is locked from start
+  lock.l_pid=getpid();
+
+  fcntl(fd,F_SETLKW,&lock);   //locked
+
+  int record_len=sizeof(enq);
+  printf("Inside enquiry joint fn, acc_no: %d\n",acc_no);
+  while(read(fd,&enq,sizeof(enq))>0)
+  {
+    if(acc_no==enq.Primary.Account.Account_Number)
+    {
+        //converting readlock on whole file to write lock on that particular record
+        lseek(fd,-sizeof(enq),SEEK_CUR);
+        lock.l_type=F_RDLCK;    //Read lock
+        lock.l_whence=SEEK_CUR;
+        lock.l_start= 0;
+        lock.l_len= sizeof(enq); //entire file is locked from start
+        lock.l_pid=getpid();
+        fcntl(fd,F_SETLKW,&lock);
+
+        struct Transaction_Details trans;
+        trans.Account_Number=enq.Primary.Account.Account_Number;
+        trans.Prev_Balance=enq.Primary.Account.Balance;
+
+        write(fd,&enq,sizeof(enq));
+        lock.l_type=F_UNLCK  ;
+        fcntl(fd,F_SETLKW,&lock);   //unlocked the file after writing to it
+
+        int fd_trans=open("transactions.txt",O_CREAT|O_RDWR|O_APPEND,0666);
+
+        trans.Curr_Balance=enq.Primary.Account.Balance;
+        write(fd_trans,&trans,sizeof(trans));
+        return 1;   //balance enquiry success
+
+
+    }
+    else  //reccord didn't find. Remove this record from lock
+    {
+
+      lock.l_whence=SEEK_SET;
+      lock.l_start=record_len+1;
+      lock.l_len=0; //entire file is locked from start
+      record_len=record_len+sizeof(enq);
+      fcntl(fd,F_SETLKW,&lock);     //removed the record which failed comparision from lock.
+
+    }
+  }
+  return -1; //failure in enquiry
 
 }
 

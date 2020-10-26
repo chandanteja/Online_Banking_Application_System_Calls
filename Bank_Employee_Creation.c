@@ -3,6 +3,7 @@
 #include<sys/types.h>
 #include<fcntl.h>
 #include<string.h>
+#include<stdlib.h>
 
 //==============================
 //User header files
@@ -20,7 +21,7 @@ char password[1024];
 
 int main()
 {
-  struct Employee_Creation admin;
+  struct Employee_Creation admin,temp;
   printf("Enter Username of the Employee to be created: ");
   scanf(" %[^\n]",admin.name);
 printf("Enter Passowrd of the Employee to be created: ");
@@ -31,6 +32,15 @@ if(fd==-1)
 {
 //  perror("open");
   fd=open("Emp_login_details.txt",O_RDWR|O_APPEND,S_IRWXU|S_IRWXG);
+}
+
+while(read(fd,&temp,sizeof(temp))>0)
+{
+  if(strcmp(temp.name,admin.name)==0)
+  {
+    printf("Username already taken.Try again\n");
+    exit(1);
+  }
 }
 
 int siz=write(fd,&admin,sizeof(admin));   //O_APPEND sets the cursor in file to EOF just before write is being performed on file opened in APpend mode.

@@ -15,7 +15,7 @@
 #include "Employee_functions.h"
 #define ARRAY_SIZE 1024
 
-#define SERV_PORT 5061
+#define SERV_PORT 5062
 
 //common client for both 34a and 34b. So if we want to execute both 34a and 34b then we need to change the port number after executing one of these
 int main()
@@ -141,6 +141,10 @@ if(op_menu==1 || op_menu==2 || op_menu==3 || op_menu==4)
     {
       printf("Account Number already Taken\n");
     }
+    else if(add_ret==-3)
+    {
+      printf("Primary username and Secondary username both are same.Please choose different names\n");
+    }
     else{
       printf("Account Created Successfully\n");
     }
@@ -178,7 +182,7 @@ if(op_menu==1 || op_menu==2 || op_menu==3 || op_menu==4)
     else if(del_ret==2)
     {
       struct Joint_Account jnt_user;
-      int fd=open("joint_customer.txt",O_CREAT|O_RDWR,0666);
+      int fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
       while(read(fd, &jnt_user, sizeof(jnt_user))>0)
       {
           if(jnt_user.Primary.Account.Account_Number==acc_no)
@@ -232,8 +236,8 @@ else if(op_menu==3)   //modify
       }
       else if(modify_ret==2)    //joint account modification
       {
-            printf("=====Username is updated successfully. Below are the details=====\n");
-            int fd=open("joint_customer.txt",O_CREAT|O_RDWR,0666);
+            printf("=====Username is updated successfully for Joint account. Below are the details=====\n");
+            int fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
             struct Joint_Account user;
             while(read(fd,&user,sizeof(user))>0)
             {
@@ -305,7 +309,13 @@ else if(op_menu==3)   //modify
 
                 if(joint_search_ret==1) //success in search
                 {
-                        //print all the details of joint account.
+                        printf("Primary USername: %s\n",user_joint.Primary.Username);
+                        printf("Secondary USername: %s\n",user_joint.Secondary.Secondary_Username);
+                        printf("Account number: %d\n",user_joint.Primary.Account.Account_Number);
+                        printf("Balance: %lf\n",user_joint.Primary.Account.Balance);
+                        printf("Primary User status: %d\n",user_joint.Primary.U_Status);
+                        printf("Secondary User status: %d\n",user_joint.Secondary.Sec_Status);
+
                 }
 
                 else if(joint_search_ret==-1)   //search failed
@@ -446,8 +456,50 @@ else if(role_cli==2)
                     exit(1);
                 }
           }
+
           else if(acc_login_choice==2)    //joint account
           {
+            printf("Enter Username: ");
+            char username[ARRAY_SIZE];
+            scanf(" %[^\n]",username);
+
+            printf("Enter account number: ");
+            int acc_no;
+            scanf("%d",&acc_no);
+
+            printf("Enter amount to deposit: ");
+            double amnt;
+            scanf("%lf",&amnt);
+
+            acc_no=htonl(acc_no);
+            write(sockfd,username,sizeof(username));
+            write(sockfd,&acc_no,sizeof(acc_no));
+            write(sockfd,&amnt,sizeof(amnt));     //no conversion needed for double values
+            acc_no=ntohl(acc_no);
+
+          //  int joint_OR_Normal;
+            //read(sockfd,&joint_OR_Normal,sizeof(joint_OR_Normal));
+            char ret_msg[150];
+            read(sockfd,ret_msg,sizeof(ret_msg));
+
+
+            if(strcmp(ret_msg,"Amount deposited successfully in joint account\n")==0)
+            {
+              struct Joint_Account dep;
+              read(sockfd,&dep,sizeof(dep));
+              printf("%s\n",ret_msg);
+              printf("============Account details after depositing money============\n");
+              printf("Username of user who deposited: %s\n",username);
+              printf("Account_Number: %d\n",dep.Primary.Account.Account_Number);
+              printf("Account Status: %d\n",dep.Primary.Account.Acc_status);
+              printf("Balance: %lf\n",dep.Primary.Account.Balance);
+              //print structure details
+
+            }
+            else{
+                printf("%s",ret_msg);
+                exit(1);
+            }
 
           }
           break;
@@ -489,7 +541,47 @@ else if(role_cli==2)
             }
           else if(acc_login_choice==2)  //joint account
           {
+            printf("Enter Username: ");
+            char username[ARRAY_SIZE];
+            scanf(" %[^\n]",username);
 
+            printf("Enter account number: ");
+            int acc_no;
+            scanf("%d",&acc_no);
+
+            printf("Enter amount to withdraw: ");
+            double amnt;
+            scanf("%lf",&amnt);
+
+            acc_no=htonl(acc_no);
+            write(sockfd,username,sizeof(username));
+            write(sockfd,&acc_no,sizeof(acc_no));
+            write(sockfd,&amnt,sizeof(amnt));     //no conversion needed for double values
+            acc_no=ntohl(acc_no);
+
+          //  int joint_OR_Normal;
+            //read(sockfd,&joint_OR_Normal,sizeof(joint_OR_Normal));
+            char ret_msg[150];
+            read(sockfd,ret_msg,sizeof(ret_msg));
+
+
+            if(strcmp(ret_msg,"Amount debited successfully from joint account\n")==0)
+            {
+              struct Joint_Account with;
+              read(sockfd,&with,sizeof(with));
+              printf("%s\n",ret_msg);
+              printf("============Account details after withdrawing money============\n");
+              printf("Username of user who withdrawn: %s\n",username);
+              printf("Account_Number: %d\n",with.Primary.Account.Account_Number);
+              printf("Account Status: %d\n",with.Primary.Account.Acc_status);
+              printf("Balance: %lf\n",with.Primary.Account.Balance);
+              //print structure details
+
+            }
+            else{
+                printf("%s",ret_msg);
+                exit(1);
+            }
           }
             break;
 
@@ -525,8 +617,34 @@ else if(role_cli==2)
                       }
                       else if(acc_login_choice==2)    //joint
                       {
+                        printf("Enter account number: ");
+                        int acc_no;
+                        scanf("%d",&acc_no);
+                        acc_no=htonl(acc_no);
+                        write(sockfd,&acc_no,sizeof(acc_no));
+                        acc_no=ntohl(acc_no);
+                        char ret_msg[150];
+                        read(sockfd,ret_msg,sizeof(ret_msg));
 
+                        if(strcmp(ret_msg,"Balance Retrieved Successfully\n")==0)
+                        {
+                          struct Joint_Account enq;
+                          read(sockfd,&enq,sizeof(enq));
+                          printf("%s\n",ret_msg);
+                          printf("================Balance details are as below================\n");
+                          printf("Username: %s\n",enq.Primary.Username);
+                          printf("Secondary Username: %s\n",enq.Secondary.Secondary_Username);
+
+                          printf("Account_Number: %d\n",enq.Primary.Account.Account_Number);
+                          printf("Balance: %lf\n",enq.Primary.Account.Balance);
+                          printf("Primary User Status: %d\n",enq.Primary.U_Status);
+                          printf("Secondary User status: %d\n",enq.Secondary.Sec_Status);
                       }
+                      else{
+                          printf("%s",ret_msg);
+                          exit(1);
+                      }
+                    }
             break;
     case 4:   //view transaction details  . Here we need to print transaction details
         if(acc_login_choice==1)

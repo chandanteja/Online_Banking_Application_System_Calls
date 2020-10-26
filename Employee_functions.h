@@ -29,9 +29,10 @@ int addAccount()
   if(acc_type==1)
   {
       struct Customer_Details customer,temp;
+      struct Joint_Account joint_temp;
     //  struct Account_Details acc_normal,acc_temp;
       int fd_Normal=open("customer.txt",O_CREAT|O_RDWR|O_APPEND,0666);
-
+      int fd_joint=open("joint_accounts.txt",O_CREAT|O_RDWR|O_APPEND,0666);
       int flag=0;					// 1 if that user already exists
 
 
@@ -69,14 +70,24 @@ int addAccount()
     			flag=1;
           return -2;    //Account number duplication
     		}
+
     	}
+
+      while(read(fd_joint,&joint_temp,sizeof(joint_temp)))      //checking with joint accounts
+      {
+        if(customer.Account.Account_Number==joint_temp.Primary.Account.Account_Number)
+        {
+          flag=1;
+          return -2;
+        }
+      }
 
       customer.Account.Balance = 0.0;
       customer.U_Status=ACTIVE_PRIMARY;
       customer.Account.Acc_Type=NORMAL;   //as user selected normal account.
       customer.Account.Acc_status=ACTIVE_ACC;
 
-printf("User status down= %d\n",customer.U_Status);
+printf("User status= %d\n",customer.U_Status);
 //This is for setting Account details
 
   //    acc_normal.Account_Number=customer.Account.Account_Number;
@@ -91,10 +102,11 @@ printf("User status down= %d\n",customer.U_Status);
   //    close(fd_acc);
 
   }
+
   else if(acc_type==2)    //for joint account
   {
     struct Joint_Account joint_holders,temp;
-    struct Account_Details acc_joint,acc_joint_temp;
+    struct Customer_Details acc_joint,acc_joint_temp;
     printf("Enter Primary Username(UNIQUE) of the customer: ");
     scanf(" %[^\n]",joint_holders.Primary.Username);
     printf("Enter Primary User Password: ");
@@ -104,9 +116,17 @@ printf("User status down= %d\n",customer.U_Status);
     printf("Enter Secondary User Password: ");
     scanf(" %[^\n]",joint_holders.Secondary.Secondary_Password);
 
+
+    if(strcmp(joint_holders.Primary.Username,joint_holders.Secondary.Secondary_Username)==0)
+    {
+          return -3;      //primary user and secondary user have same name
+    }
+
     // code here to check for both usernames exists or not
     int fd_joint=open("joint_accounts.txt",O_CREAT|O_RDWR|O_APPEND,0666);
     int flag=0;
+
+
     while(read(fd_joint, &temp, sizeof(temp))>0)
     {
       if( strcmp(temp.Primary.Username, joint_holders.Primary.Username)==0  || strcmp(temp.Primary.Username, joint_holders.Secondary.Secondary_Username)==0)
@@ -120,6 +140,7 @@ printf("User status down= %d\n",customer.U_Status);
         flag=1;
         return -1;    //username duplication
       }
+      printf("searching joint accounts for name duplication\n");
     }
 
 
@@ -127,15 +148,28 @@ printf("User status down= %d\n",customer.U_Status);
     printf("Enter Account number(UNIQUE): ");
     scanf("%d",&joint_holders.Primary.Account.Account_Number);
 
-    int fd_acc=open("Accounts.txt",O_CREAT|O_RDWR|O_APPEND,0664);
+    int fd_acc=open("customer.txt",O_CREAT|O_RDWR|O_APPEND,0664);
+    //int fd_joint_acc_no=open("joint_accounts.txt",O_CREAT|O_RDWR|O_APPEND,0664);
 
-    while(read(fd_acc, &acc_joint_temp, sizeof(acc_joint_temp))>0)
+    lseek(fd_joint,0,SEEK_SET);
+    while((read(fd_acc, &acc_joint_temp, sizeof(acc_joint_temp))>0))
     {
-      if(acc_joint_temp.Account_Number==joint_holders.Primary.Account.Account_Number)
+      if(acc_joint_temp.Account.Account_Number==joint_holders.Primary.Account.Account_Number)
       {
         flag=1;
         return -2;    //Account number duplication
       }
+
+    }
+
+    while((read(fd_joint, &temp, sizeof(temp))>0))
+    {
+
+        if(temp.Primary.Account.Account_Number==joint_holders.Primary.Account.Account_Number)
+        {
+          flag=1;
+          return -2;    //Account number duplication
+        }
     }
 
 
@@ -147,13 +181,17 @@ printf("User status down= %d\n",customer.U_Status);
 
     joint_holders.Primary.Account.Balance = 0.00;
 
-    acc_joint.Account_Number=joint_holders.Primary.Account.Account_Number;
-    acc_joint.Balance=0.0;
-    acc_joint.Acc_Type=JOINT;
-    acc_joint.Acc_status=ACTIVE_ACC;
+  //  acc_joint.Account.Account_Number=joint_holders.Primary.Account.Account_Number;
+  //  acc_joint.Account.Balance=0.0;
+  //  acc_joint.Account.Acc_Type=JOINT;
+  //  acc_joint.Account.Acc_status=ACTIVE_ACC;
     //writing into joint account is still pending
+    write(fd_joint,&joint_holders,sizeof(joint_holders));
+    close(fd_joint);
+    close(fd_acc);
 
   }
+
   else
   {
       printf("Sorry! We don't have this Account.Retry from first\n");
@@ -192,7 +230,7 @@ int search_joint(int joint_acc_no,struct Joint_Account *user)
 
         printf("Enter your username to access your account data: ");
         scanf(" %[^\n]",username_search_jnt);
-        int fd_joint=open("joint_customer.txt",O_CREAT|O_RDWR|O_APPEND,0666);
+        int fd_joint=open("joint_accounts.txt",O_CREAT|O_RDWR|O_APPEND,0666);
 
         while(read(fd_joint, &temp, sizeof(temp))>0)
         {
@@ -260,7 +298,7 @@ int deleteAcc(int acc_no)
               printf("Enter Username: ");
               char del_username[ARRAY_SIZE];
               scanf(" %[^\n]",del_username);
-              int fd_jnt=open("joint_customer.txt",O_CREAT|O_RDWR,0666);
+              int fd_jnt=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
               while(read(fd_jnt,&jnt_acc_del,sizeof(jnt_acc_del))>0)
               {
                     if(strcmp(del_username,jnt_acc_del.Primary.Username)==0)      //if the username matched with primary user
@@ -293,7 +331,7 @@ int deleteAcc(int acc_no)
         }
         else if(choice==2)
         {   //delete for both
-              int fd_jnt=open("joint_customer.txt",O_CREAT|O_RDWR,0666);
+              int fd_jnt=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
               while(read(fd_jnt,&jnt_acc_del,sizeof(jnt_acc_del))>0)
               {
                   if(jnt_acc_del.Primary.Account.Account_Number==acc_no)    //if account exists
@@ -355,8 +393,8 @@ int modifyAccount(int acc_no,char password[])
     {
         //  printf("Enter the new username you would like to modify(UNIQUE): ");
         struct Joint_Account modify_user,temp;
-        int fd=open("joint_customer.txt",O_CREAT|O_RDWR,0666);
-        int modify_fd=open("joint_customer.txt",O_CREAT|O_RDWR,0666);   //for modifying
+        int fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
+        int modify_fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);   //for modifying
         while(read(fd,&temp,sizeof(temp))>0)
         {
 
