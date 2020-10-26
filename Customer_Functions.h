@@ -460,7 +460,75 @@ int passwordChangeNormal(int acc_no, char new_password[])
 
 }
 
-int passwordChangeJoint(int acc_no) //need username of which user to change
+int passwordChangeJoint(int acc_no,char username[],char new_password[]) //need username of which user to change
 {
+  int fd=open("joint_accounts.txt",O_CREAT|O_RDWR,0666);
+  struct flock lock;
+  struct Joint_Account pass;
+
+  lock.l_type=F_RDLCK;    //Read lock
+  lock.l_whence=SEEK_SET;
+  lock.l_start=0;
+  lock.l_len=0; //entire file is locked from start
+  lock.l_pid=getpid();
+
+  fcntl(fd,F_SETLKW,&lock);   //locked
+
+  int record_len=sizeof(pass);
+  printf("Inside password change joint fn, acc_no: %d\n",acc_no);
+  while(read(fd,&pass,sizeof(pass))>0)
+  {
+    if(acc_no==pass.Primary.Account.Account_Number && strcmp(username,pass.Primary.Username)==0)
+    {
+        //converting readlock on whole file to write lock on that particular record
+        lseek(fd,-sizeof(pass),SEEK_CUR);
+        lock.l_type=F_RDLCK;    //Read lock
+        lock.l_whence=SEEK_CUR;
+        lock.l_start= 0;
+        lock.l_len= sizeof(pass); //entire file is locked from start
+        lock.l_pid=getpid();
+        fcntl(fd,F_SETLKW,&lock);
+
+        strcpy(pass.Primary.Password,new_password);
+        printf("Updated the password successfully\n");
+        write(fd,&pass,sizeof(pass));
+        lock.l_type=F_UNLCK  ;
+        fcntl(fd,F_SETLKW,&lock);   //unlocked the file after writing to it
+
+        return 1;   //balance enquiry success
+
+
+    }
+    else if(acc_no==pass.Primary.Account.Account_Number && strcmp(username,pass.Secondary.Secondary_Username)==0)
+    {
+      lseek(fd,-sizeof(pass),SEEK_CUR);
+      lock.l_type=F_RDLCK;    //Read lock
+      lock.l_whence=SEEK_CUR;
+      lock.l_start= 0;
+      lock.l_len= sizeof(pass); //entire file is locked from start
+      lock.l_pid=getpid();
+      fcntl(fd,F_SETLKW,&lock);
+
+      strcpy(pass.Secondary.Secondary_Password,new_password);
+      printf("Updated the password successfully\n");
+      write(fd,&pass,sizeof(pass));
+      lock.l_type=F_UNLCK  ;
+      fcntl(fd,F_SETLKW,&lock);   //unlocked the file after writing to it
+
+      return 1;  //password change successful
+
+    }
+    else  //reccord didn't find. Remove this record from lock
+    {
+
+      lock.l_whence=SEEK_SET;
+      lock.l_start=record_len+1;
+      lock.l_len=0; //entire file is locked from start
+      record_len=record_len+sizeof(pass);
+      fcntl(fd,F_SETLKW,&lock);     //removed the record which failed comparision from lock.
+
+    }
+  }
+  return -1; //failure in enquiry
 
 }

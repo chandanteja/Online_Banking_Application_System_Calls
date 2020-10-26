@@ -598,15 +598,18 @@ else if(acc_login_choice==2)
               case 5: //password change
                   //  if(acc_login_choice==2)   //NORMAL
                   //  {
-                          printf("password change functionality invoked\n");
+                          printf("password change functionality for joint acc invoked\n");
                   //        int acc_no;
                           char new_password[ARRAY_SIZE];
+                          //char username[ARRAY_SIZE];
                           read(connfd_customer,&acc_no,sizeof(acc_no));
+                          read(connfd_customer,username,sizeof(username));
                           read(connfd_customer,new_password,sizeof(new_password));
+
                           acc_no=ntohl(acc_no);
                           printf("acc_no: %d\n",acc_no);
 
-                          int pass_ret=passwordChangeNormal(acc_no,new_password);
+                          int pass_ret=passwordChangeJoint(acc_no,username,new_password);
                           if(pass_ret==1)
                           {
                               char success[150]="Password changed successfully\n";

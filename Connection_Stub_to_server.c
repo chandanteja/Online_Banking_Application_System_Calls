@@ -685,7 +685,35 @@ else if(role_cli==2)
     }
   else if(acc_login_choice==2)  //joint account
   {
+        printf("Enter account number: ");
+        int acc_no;
+        scanf("%d",&acc_no);
 
+        printf("Enter username for which user password needs to be changed: ");
+        char username[ARRAY_SIZE];
+        scanf(" %[^\n]",username);
+
+        printf("Enter New Password for Password change: ");
+        char new_pass[ARRAY_SIZE];
+        scanf(" %[^\n]",new_pass);
+
+        acc_no=htonl(acc_no);
+        write(sockfd,&acc_no,sizeof(acc_no));
+        write(sockfd,username,sizeof(username));
+        write(sockfd,new_pass,sizeof(new_pass));     //no conversion needed for double values
+        acc_no=ntohl(acc_no);
+
+        char ret_msg[150];
+        read(sockfd,ret_msg,sizeof(ret_msg));
+
+        if(strcmp(ret_msg,"Password changed successfully\n")==0)
+        {
+                printf("%s",ret_msg);
+        }
+        else{
+            printf("%s",ret_msg);
+            exit(1);
+        }
   }
 
           break;
