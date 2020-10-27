@@ -82,7 +82,7 @@ if(response_ch=='\n')
   while(n_cust!=0)
   {
     //  printf("Inside verification loop\n");
-      if((strcmp(credentials_cust.Username,username_cust)==0)&& strcmp(credentials_cust.Password,passwd_cust)==0)
+      if((strcmp(credentials_cust.Username,username_cust)==0)&& strcmp(credentials_cust.Password,passwd_cust)==0 && credentials_cust.U_Status==ACTIVE_PRIMARY)
       {
                   printf("\nBoth username and Passwd matched\n");
                   flagu=1;
@@ -377,14 +377,14 @@ else if(acc_login_choice==2)
         while(n_cust!=0)
         {
           //  printf("Inside verification loop\n");
-            if((strcmp(credentials_cust.Primary.Username,username_cust)==0)&& strcmp(credentials_cust.Primary.Password,passwd_cust)==0)
+            if((strcmp(credentials_cust.Primary.Username,username_cust)==0)&& strcmp(credentials_cust.Primary.Password,passwd_cust)==0 && credentials_cust.Primary.U_Status==ACTIVE_PRIMARY)
             {
               printf("\nBoth username and Passwd matched for primary user\n");
               flagu=1;
               flagp=1;
               break;
             }
-            else if((strcmp(credentials_cust.Secondary.Secondary_Username,username_cust)==0)&& strcmp(credentials_cust.Secondary.Secondary_Password,passwd_cust)==0)
+            else if((strcmp(credentials_cust.Secondary.Secondary_Username,username_cust)==0)&& strcmp(credentials_cust.Secondary.Secondary_Password,passwd_cust)==0 && credentials_cust.Secondary.Sec_Status==ACTIVE_SECONDARY)
             {
                     printf("\nBoth username and Passwd matched for secondary user\n");
                     flagu=1;

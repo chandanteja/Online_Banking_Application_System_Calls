@@ -278,7 +278,7 @@ int deleteAcc(int acc_no)
 
                   if(acc_del.Account.Balance!=0.0)
                       acc_del.Account.Balance=0.0;
-                      lseek(fd_normal,-sizeof(acc_del),SEEK_CUR);   // after reading entire structure into a record variable to move to start of the record, we do lseek
+                  lseek(fd_normal,-sizeof(acc_del),SEEK_CUR);   // after reading entire structure into a record variable to move to start of the record, we do lseek
 
                   write(fd_normal,&acc_del,sizeof(acc_del));
                   return 1;   //successfully deleted
@@ -304,25 +304,39 @@ int deleteAcc(int acc_no)
                     if(strcmp(del_username,jnt_acc_del.Primary.Username)==0)      //if the username matched with primary user
                     {
                         jnt_acc_del.Primary.U_Status=INACTIVE_PRIMARY;      //deactivating primary
+
                         if(jnt_acc_del.Secondary.Sec_Status==INACTIVE_SECONDARY)    //if secondary account is also inactive then we need to deactivate the account itself
                         {
                             jnt_acc_del.Primary.Account.Acc_status=INACTIVE_ACC;      //Making entire account inactive i.e delete
                             if(jnt_acc_del.Primary.Account.Balance!=0.0)
                                   jnt_acc_del.Primary.Account.Balance=0.0;
+
+
                         }
+
+                        lseek(fd_jnt,-sizeof(jnt_acc_del),SEEK_CUR);   // after reading entire structure into a record variable to move to start of the record, we do lseek
+
+                        write(fd_jnt,&jnt_acc_del,sizeof(jnt_acc_del));
                         return 2;
 
                     }
                     else if(strcmp(del_username,jnt_acc_del.Secondary.Secondary_Username)==0)
                     {
                         jnt_acc_del.Secondary.Sec_Status=INACTIVE_SECONDARY;
+
                         if(jnt_acc_del.Primary.U_Status==INACTIVE_PRIMARY)    //if secondary account is also inactive then we need to deactivate the account itself
                         {
                             jnt_acc_del.Primary.Account.Acc_status=INACTIVE_ACC;      //Making entire account inactive i.e delete
 
                             if(jnt_acc_del.Primary.Account.Balance!=0.0)
                                   jnt_acc_del.Primary.Account.Balance=0.0;
+
                         }
+
+                        lseek(fd_jnt,-sizeof(jnt_acc_del),SEEK_CUR);   // after reading entire structure into a record variable to move to start of the record, we do lseek
+
+                        write(fd_jnt,&jnt_acc_del,sizeof(jnt_acc_del));
+                        
                         return 2;
                     }
               }
